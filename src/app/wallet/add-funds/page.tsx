@@ -184,8 +184,8 @@ export default function WalletAddFundsPage() {
                         className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-950 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
                       />
                     </label>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
+                    <div className="flex flex-row flex-wrap gap-3">
+                      <label className="block min-w-[calc(50%-0.75rem)] flex-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
                         Expiry date
                         <input
                           type="text"
@@ -193,7 +193,7 @@ export default function WalletAddFundsPage() {
                           className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-950 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
                         />
                       </label>
-                      <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
+                      <label className="block min-w-[calc(50%-0.75rem)] flex-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
                         CVC
                         <input
                           type="text"
