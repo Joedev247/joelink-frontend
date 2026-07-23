@@ -3,14 +3,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  Bell,
+  CaretDown,
   House,
   Wallet as WalletIcon,
   ShoppingBagOpen,
   Storefront,
   Headset,
+  SignOut,
+  UserCircle,
+  ArrowRight,
 } from "@phosphor-icons/react/dist/ssr";
+import { formatCurrency, getWalletState, type WalletTransaction } from "@/lib/wallet";
 
 const nav = [
   {
@@ -43,19 +49,34 @@ const nav = [
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [hasAccount, setHasAccount] = useState(false);
+  const [balance, setBalance] = useState(0);
+  const [notifications, setNotifications] = useState<WalletTransaction[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const hideShellExtras = pathname === "/login" || pathname === "/register";
 
+  const unreadCount = useMemo(() => notifications.length, [notifications]);
+
   useEffect(() => {
-    const syncAccount = () =>
-      setHasAccount(
-        window.localStorage.getItem("joelink-account-created") === "true",
-      );
-    syncAccount();
-    window.addEventListener("joelink-account-updated", syncAccount);
-    window.addEventListener("storage", syncAccount);
+    const syncState = () => {
+      const accountCreated = window.localStorage.getItem("joelink-account-created") === "true";
+      setHasAccount(accountCreated);
+      if (accountCreated) {
+        const wallet = getWalletState();
+        setBalance(wallet.balance);
+        setNotifications(wallet.transactions);
+      } else {
+        setBalance(0);
+        setNotifications([]);
+      }
+    };
+
+    syncState();
+    window.addEventListener("joelink-account-updated", syncState);
+    window.addEventListener("storage", syncState);
     return () => {
-      window.removeEventListener("joelink-account-updated", syncAccount);
-      window.removeEventListener("storage", syncAccount);
+      window.removeEventListener("joelink-account-updated", syncState);
+      window.removeEventListener("storage", syncState);
     };
   }, []);
 
@@ -85,7 +106,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </Link>
               ))}
             </nav>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {!hasAccount ? (
                 <div className="auth-switcher flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
                   <Link
@@ -104,14 +125,62 @@ export function Shell({ children }: { children: React.ReactNode }) {
               ) : (
                 <>
                   <Link
-                    href="/orders"
-                    className="hidden text-xs font-bold text-slate-500 hover:text-[#1a73e8] sm:block"
+                    href="/wallet"
+                    className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:flex"
                   >
-                    My dashboard
+                    <WalletIcon size={16} weight="bold" className="text-[#0f766e]" />
+                    <span>{formatCurrency(balance)}</span>
                   </Link>
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#071426] text-[10px] font-black text-[#a3f45f] shadow-sm">
-                    JD
-                  </span>
+
+                  <div className="relative">
+                    <Link
+                      href="/notifications"
+                      className="relative grid h-9 w-9 place-items-center rounded-full  p-1.5 shadow bg-slate-50 text-slate-700 transition"
+                      aria-label="Notifications"
+                    >
+                      <Bell size={18} weight="fill" />
+                      {unreadCount > 0 && (
+                        <span className="absolute right-1 top-1 min-h-4 min-w-4 rounded-full bg-[#a3f45f]  px-1 text-[10px] font-black text-black">
+                          {Math.min(unreadCount, 9)}
+                        </span>
+                      )}
+                    </Link>
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setMenuOpen((prev) => !prev)}
+                      className="flex items-center gap-2 rounded-full p-1.5 pr-3 shadow text-sm font-semibold text-slate-700 transition"
+                    >
+                      <span className="grid h-8 w-8 place-items-center rounded-full bg-[#071426] text-[10px] font-black text-[#a3f45f] shadow-sm">
+                        JD
+                      </span>
+                      <span className="hidden sm:block">Profile</span>
+                      <CaretDown size={14} weight="bold" />
+                    </button>
+
+                    {menuOpen && (
+                      <div className="absolute right-0 top-12 z-40 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                        <Link href="/profile" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setMenuOpen(false)}>
+                          <UserCircle size={16} weight="fill" className="text-[#0f766e]" />
+                          My profile
+                        </Link>
+                        <Link href="/orders" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setMenuOpen(false)}>
+                          <ShoppingBagOpen size={16} weight="fill" className="text-[#0f766e]" />
+                          My orders
+                        </Link>
+                        <button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => {
+                          window.localStorage.removeItem("joelink-account-created");
+                          window.dispatchEvent(new Event("joelink-account-updated"));
+                          setMenuOpen(false);
+                        }}>
+                          <SignOut size={16} weight="bold" className="text-[#0f766e]" />
+                          Sign out
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
