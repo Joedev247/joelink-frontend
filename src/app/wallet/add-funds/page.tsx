@@ -250,7 +250,7 @@ export default function WalletAddFundsPage() {
               <div className="mx-auto mb-5 grid h-24 w-24 place-items-center rounded-full bg-[#a3f45f] text-black shadow-inner">
                 <CheckCircle size={44} weight="bold" />
               </div>
-              <h2 className="text-3xl font-black text-slate-950">Payment complete</h2>
+              <h2 className="text-2xl font-black text-slate-950">Payment complete</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Your wallet has been topped up successfully. The amount is now available in your balance.
               </p>
