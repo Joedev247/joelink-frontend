@@ -16,7 +16,8 @@ import {
   UserCircle,
   ArrowRight,
 } from "@phosphor-icons/react/dist/ssr";
-import { formatCurrency, getWalletState, type WalletTransaction } from "@/lib/wallet";
+import { formatCurrency, getUnreadNotificationCount, getWalletState, type WalletTransaction } from "@/lib/wallet";
+import { getStoredCurrency } from "@/lib/currency";
 
 const nav = [
   {
@@ -55,7 +56,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const hideShellExtras = pathname === "/login" || pathname === "/register";
 
-  const unreadCount = useMemo(() => notifications.length, [notifications]);
+  const unreadCount = useMemo(() => getUnreadNotificationCount(notifications), [notifications]);
 
   useEffect(() => {
     const syncState = () => {
@@ -129,7 +130,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:flex"
                   >
                     <WalletIcon size={16} weight="bold" className="text-[#0f766e]" />
-                    <span>{formatCurrency(balance)}</span>
+                    <span>{formatCurrency(balance, getStoredCurrency())}</span>
                   </Link>
 
                   <div className="relative">
@@ -166,9 +167,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                           <UserCircle size={16} weight="fill" className="text-[#0f766e]" />
                           My profile
                         </Link>
-                        <Link href="/orders" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setMenuOpen(false)}>
+                        <Link href="/profile#wishlist" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setMenuOpen(false)}>
                           <ShoppingBagOpen size={16} weight="fill" className="text-[#0f766e]" />
-                          My orders
+                          My wishlist
                         </Link>
                         <button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => {
                           window.localStorage.removeItem("joelink-account-created");

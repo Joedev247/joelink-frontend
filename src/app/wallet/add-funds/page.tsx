@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Bank, CreditCard, Phone, CheckCircle, CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
 import { addWalletDeposit, formatCurrency, getWalletState } from "@/lib/wallet";
+import { getStoredCurrency } from "@/lib/currency";
 
 export default function WalletAddFundsPage() {
   const router = useRouter();
@@ -107,8 +108,8 @@ export default function WalletAddFundsPage() {
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-black/90">Balance</p>
                   <div className="mt-2 flex items-baseline gap-2">
-                    <p className="text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance)}</p>
-                    <span className="text-sm uppercase tracking-widest text-black/80">USD</span>
+                    <p className="text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
+                    <span className="text-sm uppercase tracking-widest text-black/80">{getStoredCurrency()}</span>
                   </div>
                 </div>
                 <p className="text-right text-xs uppercase tracking-widest text-black">
@@ -243,29 +244,41 @@ export default function WalletAddFundsPage() {
         )}
       </div>
 
-      {depositState === "success" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-[2rem] bg-white shadow-2xl">
-            <div className="rounded-[2rem] bg-[#f4fff2] p-8 text-center">
-              <div className="mx-auto mb-5 grid h-24 w-24 place-items-center rounded-full bg-[#a3f45f] text-black shadow-inner">
-                <CheckCircle size={44} weight="bold" />
-              </div>
-              <h2 className="text-2xl font-black text-slate-950">Payment complete</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                Your wallet has been topped up successfully. The amount is now available in your balance.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDepositState("idle");
-                    router.push("/wallet");
-                  }}
-                  className="rounded-xl bg-[#a3f45f] px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-black transition hover:bg-[#86c85d]"
-                >
-                  Back to wallet
-                </button>
-              </div>
+      {depositState !== "idle" && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 px-4 pb-6 pt-24 sm:px-6">
+          <div className="w-full max-w-md overflow-hidden rounded-[2rem] bg-white shadow-[0_30px_100px_rgba(15,118,110,0.16)]">
+            <div className="rounded-[2rem] bg-[#f8fdfa] p-8 text-center">
+              {depositState === "processing" ? (
+                <>
+                  <div className="mx-auto mb-4 grid h-24 w-24 place-items-center rounded-full bg-[#a3f45f] text-black shadow-inner">
+                    <CircleNotch size={40} weight="bold" className="animate-spin" />
+                  </div>
+                  <h2 className="text-xl font-black text-slate-950">Processing...</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Your payment is being confirmed. Please wait while we update your wallet.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="mx-auto mb-4 grid h-24 w-24 place-items-center rounded-full bg-[#a3f45f] text-black shadow-[0_15px_30px_rgba(15,118,110,0.24)]">
+                    <CheckCircle size={44} weight="bold" />
+                  </div>
+                  <h2 className="text-xl font-black text-slate-950">Payment complete</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Your wallet has been topped up successfully. The amount is now available in your balance.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDepositState("idle");
+                      router.push("/wallet");
+                    }}
+                    className="mt-6 inline-flex items-center justify-center rounded-xl bg-[#a3f45f] px-6 py-3 text-sm font-black text-black shadow-[0_12px_30px_rgba(15,118,110,0.28)] transition"
+                  >
+                    Back to wallet
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

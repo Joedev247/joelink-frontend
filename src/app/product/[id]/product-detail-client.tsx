@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle, CircleNotch } from "@phosphor-icons/react/dist/ssr";
-import { money } from "@/lib/store";
+import { createOrderFromProduct, money } from "@/lib/store";
+import { getStoredCurrency } from "@/lib/currency";
+import { applyPurchaseToWallet } from "@/lib/wallet";
 import type { Product } from "@/lib/store";
 
 type ProductDetailClientProps = {
@@ -22,7 +24,12 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
     }
 
     setCheckoutState("processing");
-    window.setTimeout(() => setCheckoutState("success"), 1400);
+    window.setTimeout(() => {
+      createOrderFromProduct(product);
+      applyPurchaseToWallet(product.price, product.name);
+      window.dispatchEvent(new Event("joelink-account-updated"));
+      setCheckoutState("success");
+    }, 1400);
   }
 
   return (
@@ -62,8 +69,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
           <div className="flex items-start justify-between gap-3 rounded-[1.5rem] bg-slate-50 p-4">
             <div>
-              <p className="text-xl font-black text-slate-950 sm:text-2xl">{money(product.price)}</p>
-              <p className="mt-1 text-xs text-slate-500 line-through">{money(product.originalPrice)}</p>
+              <p className="text-xl font-black text-slate-950 sm:text-2xl">{money(product.price, getStoredCurrency())}</p>
+              <p className="mt-1 text-xs text-slate-500 line-through">{money(product.originalPrice, getStoredCurrency())}</p>
             </div>
             <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
               Best value

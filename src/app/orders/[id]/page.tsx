@@ -1,16 +1,31 @@
-import { use } from "react";
+"use client";
+
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
-import { orders, products } from "@/lib/store";
+import { getOrders, products, type Order } from "@/lib/store";
 import { OrderDetailsContent } from "./order-details-content";
-
-export function generateStaticParams() {
-  return orders.map((order) => ({ id: order.id }));
-}
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    const syncOrders = () => {
+      setOrders(getOrders());
+    };
+
+    syncOrders();
+    window.addEventListener("storage", syncOrders);
+    window.addEventListener("joelink-account-updated", syncOrders);
+
+    return () => {
+      window.removeEventListener("storage", syncOrders);
+      window.removeEventListener("joelink-account-updated", syncOrders);
+    };
+  }, []);
+
   const order = orders.find((entry) => entry.id === id);
   const product = products.find((entry) => entry.name === order?.product);
 

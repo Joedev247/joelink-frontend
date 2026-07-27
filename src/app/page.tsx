@@ -531,10 +531,10 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
         <div>
           <div className="flex items-center gap-2">
             <span className="account-price text-lg font-black">
-              {money(product.price)}
+              {money(product.price, getStoredCurrency())}
             </span>
             <span className="text-[10px] text-slate-400 line-through">
-              {money(product.originalPrice)}
+              {money(product.originalPrice, getStoredCurrency())}
             </span>
           </div>
           <span className="account-savings text-[10px] font-bold">

@@ -1,9 +1,30 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
-import { orders, money } from "@/lib/store";
+import { getOrders, money, type Order } from "@/lib/store";
+import { getStoredCurrency } from "@/lib/currency";
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    const syncOrders = () => {
+      setOrders(getOrders());
+    };
+
+    syncOrders();
+    window.addEventListener("storage", syncOrders);
+    window.addEventListener("joelink-account-updated", syncOrders);
+
+    return () => {
+      window.removeEventListener("storage", syncOrders);
+      window.removeEventListener("joelink-account-updated", syncOrders);
+    };
+  }, []);
+
   return (
     <Shell>
       <div className="mx-auto w-full px-4 py-8 sm:max-w-2xl sm:px-6 lg:max-w-3xl lg:px-8 mb-30">
@@ -50,7 +71,7 @@ export default function OrdersPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
-                  <p className="text-base font-black text-slate-950">{money(order.amount)}</p>
+                  <p className="text-base font-black text-slate-950">{money(order.amount, getStoredCurrency())}</p>
                   <Link
                     href={`/orders/${encodeURIComponent(order.id)}`}
                     className="inline-flex items-center gap-2 rounded-lg bg-[#a3f45f] px-3 py-2 text-xs font-bold text-[#09120b] shadow-xs transition hover:bg-[#94d34c] whitespace-nowrap"

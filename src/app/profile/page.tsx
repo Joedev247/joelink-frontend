@@ -1,22 +1,70 @@
 "use client";
 
-import { ArrowRight, Copy, Gift, ShieldCheck, Sparkle, UserCircle } from "@phosphor-icons/react/dist/ssr";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Copy, Gift, ShieldCheck, Sparkle, UserCircle, HeartBreak } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
-
-const wishlistItems = [
-  {
-    name: "CapCut Pro 1-Month Account",
-    price: "CFA 5,000.00",
-    tag: "Private account",
-  },
-  {
-    name: "Spotify Premium Family",
-    price: "CFA 3,200.00",
-    tag: "Instant delivery",
-  },
-];
+import { getOrders, getWishlistItems, money, type WishlistItem } from "@/lib/store";
+import { getWalletState } from "@/lib/wallet";
+import { SUPPORTED_CURRENCIES, type CurrencyCode } from "@/lib/currency";
 
 export default function ProfilePage() {
+  const [fullName, setFullName] = useState("Joedev");
+  const [email, setEmail] = useState("joedev@gmail.com");
+  const [currency, setCurrency] = useState<CurrencyCode>("CFA");
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [orderCount, setOrderCount] = useState(0);
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [memberSince, setMemberSince] = useState("Jan 2026");
+  const [statusMessage, setStatusMessage] = useState("");
+
+  useEffect(() => {
+    const syncProfile = () => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      const storedName = window.localStorage.getItem("joelink-profile-name") || "Joedev";
+      const storedEmail = window.localStorage.getItem("joelink-profile-email") || "joedev@gmail.com";
+      const storedCurrency = (window.localStorage.getItem("joelink-profile-currency") as CurrencyCode | null) || "CFA";
+      const storedMemberDate = window.localStorage.getItem("joelink-profile-member-since") || "Jan 2026";
+
+      setFullName(storedName);
+      setEmail(storedEmail);
+      setCurrency(SUPPORTED_CURRENCIES.includes(storedCurrency) ? storedCurrency : "CFA");
+      setMemberSince(storedMemberDate);
+      setWalletBalance(getWalletState().balance);
+      setOrderCount(getOrders().length);
+      setWishlistItems(getWishlistItems());
+    };
+
+    syncProfile();
+    window.addEventListener("storage", syncProfile);
+    window.addEventListener("joelink-account-updated", syncProfile);
+
+    return () => {
+      window.removeEventListener("storage", syncProfile);
+      window.removeEventListener("joelink-account-updated", syncProfile);
+    };
+  }, []);
+
+  const handleSaveProfile = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const nextName = fullName.trim() || "Joedev";
+    const nextEmail = email.trim() || "joedev@gmail.com";
+    const nextCurrency = currency || "CFA";
+
+    window.localStorage.setItem("joelink-profile-name", nextName);
+    window.localStorage.setItem("joelink-profile-email", nextEmail);
+    window.localStorage.setItem("joelink-profile-currency", nextCurrency);
+    window.localStorage.setItem("joelink-profile-member-since", memberSince || "Jan 2026");
+    window.dispatchEvent(new Event("joelink-account-updated"));
+    setStatusMessage("Profile updated successfully.");
+  };
+
   return (
     <Shell>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10 mb-30">
@@ -32,16 +80,16 @@ export default function ProfilePage() {
               <div className="bg-[#a3f45f] p-6 text-white sm:p-8">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/15 text-2xl font-black backdrop-blur">
+                    <div className="grid h-16 w-16 place-items-center rounded-full bg-white/15 text-2xl font-black backdrop-blur text-black">
                       J
                     </div>
                     <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/80">User profile</p>
-                      <h2 className="mt-1 text-2xl font-black">Joedev</h2>
-                      <p className="mt-1 text-sm text-white/80">joedev@gmail.com</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-black/80">User profile</p>
+                      <h2 className="mt-1 text-2xl font-black text-black">{fullName}</h2>
+                      <p className="mt-1 text-sm text-black/80">{email}</p>
                     </div>
                   </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 text-black px-3 py-2 text-sm font-semibold">
                     <Sparkle size={16} weight="fill" />
                     Premium member
                   </div>
@@ -51,20 +99,20 @@ export default function ProfilePage() {
               <div className="grid gap-4 p-5 sm:grid-cols-3 sm:p-6">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Wallet balance</p>
-                  <p className="mt-2 text-xl font-black text-slate-950">CFA 24,000</p>
+                  <p className="mt-2 text-xl font-black text-slate-950">{money(walletBalance, currency)}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Orders</p>
-                  <p className="mt-2 text-xl font-black text-slate-950">12 active</p>
+                  <p className="mt-2 text-xl font-black text-slate-950">{orderCount} active</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Member since</p>
-                  <p className="mt-2 text-xl font-black text-slate-950">Jan 2026</p>
+                  <p className="mt-2 text-xl font-black text-slate-950">{memberSince}</p>
                 </div>
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <section id="profile-settings" className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex items-center gap-3">
                 <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#a3f45f]/20 text-[#0f766e]">
                   <UserCircle size={22} weight="fill" />
@@ -79,24 +127,42 @@ export default function ProfilePage() {
                 <label className="block text-sm font-semibold text-slate-700">
                   Full name
                   <input
-                    defaultValue="Joedev"
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
                   />
                 </label>
                 <label className="block text-sm font-semibold text-slate-700">
                   Preferred currency
-                  <select className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10">
-                    <option>CFA</option>
-                    <option>USD</option>
-                    <option>EUR</option>
+                  <select
+                    value={currency}
+                    onChange={(event) => {
+                      const nextCurrency = event.target.value as CurrencyCode;
+                      setCurrency(nextCurrency);
+                      window.localStorage.setItem("joelink-profile-currency", nextCurrency);
+                      window.dispatchEvent(new Event("joelink-account-updated"));
+                    }}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
+                  >
+                    {SUPPORTED_CURRENCIES.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </select>
                 </label>
               </div>
 
-              <button className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#a3f45f] px-4 py-3 text-sm font-black text-[#09120b] transition hover:brightness-105">
-                Update profile
-                <ArrowRight size={16} weight="bold" />
-              </button>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={handleSaveProfile}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-[#a3f45f] px-4 py-3 text-sm font-black text-[#09120b] transition hover:brightness-105"
+                >
+                  Update profile
+                  <ArrowRight size={16} weight="bold" />
+                </button>
+                {statusMessage ? <span className="text-sm font-semibold text-[#0f766e]">{statusMessage}</span> : null}
+              </div>
             </section>
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -128,7 +194,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-6">
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <section id="wishlist" className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex items-center gap-3">
                 <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#eef8ff] text-[#1a73e8]">
                   <Gift size={22} weight="fill" />
@@ -140,20 +206,29 @@ export default function ProfilePage() {
               </div>
 
               <div className="mt-5 space-y-3">
-                {wishlistItems.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div>
-                      <p className="text-sm font-black text-slate-950">{item.name}</p>
-                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{item.tag}</p>
+                {wishlistItems.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">
+                    <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#ecfdf5] text-[#0f766e]">
+                      <HeartBreak size={20} weight="fill" />
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-slate-950">{item.price}</p>
-                      <button className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#0f766e]">
-                        View <ArrowRight size={12} weight="bold" />
-                      </button>
-                    </div>
+                    Your saved favorites will appear here.
                   </div>
-                ))}
+                ) : (
+                  wishlistItems.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div>
+                        <p className="text-sm font-black text-slate-950">{item.name}</p>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{item.tag}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-black text-slate-950">{money(item.price)}</p>
+                        <Link href={`/product/${item.id}`} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#0f766e]">
+                          View <ArrowRight size={12} weight="bold" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </section>
 

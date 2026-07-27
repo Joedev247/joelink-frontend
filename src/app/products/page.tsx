@@ -1,12 +1,28 @@
 "use client";
 import Link from "next/link";
-import { Storefront, ArrowRight } from "@phosphor-icons/react/dist/ssr";
-import { useState } from "react";
+import { Storefront, ArrowRight, Heart } from "@phosphor-icons/react/dist/ssr";
+import { useEffect, useState } from "react";
 import { Shell, PageTitle } from "@/components/shell";
-import { categories, products, money } from "@/lib/store";
+import { categories, products, money, getWishlistProductIds, toggleWishlistProduct } from "@/lib/store";
+import { getStoredCurrency } from "@/lib/currency";
+
 export default function ProductsPage() {
   const [category, setCategory] = useState("All accounts");
   const [query, setQuery] = useState("");
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    const syncFavorites = () => setFavoriteIds(getWishlistProductIds());
+    syncFavorites();
+    window.addEventListener("storage", syncFavorites);
+    window.addEventListener("joelink-account-updated", syncFavorites);
+
+    return () => {
+      window.removeEventListener("storage", syncFavorites);
+      window.removeEventListener("joelink-account-updated", syncFavorites);
+    };
+  }, []);
+
   const visible = products.filter((p) => {
     const matchesCategory = category === "All accounts" || p.category === category;
     const q = query.trim().toLowerCase();
@@ -59,38 +75,54 @@ export default function ProductsPage() {
           </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map((p) => (
-            <Link
-              href={`/product/${p.id}`}
-              key={p.id}
-              className="account-card group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition duration-300 hover:-translate-y-1.5 hover:border-blue-300 hover:shadow-xl"
-            >
-              <div className={`relative mb-4 flex aspect-[1.45] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br ${p.color}`}>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,.25),transparent_45%)]" />
-                <div className="relative grid h-20 w-20 place-items-center rounded-[1.4rem] bg-white/95 p-3 shadow-2xl ring-4 ring-white/20 transition duration-300 group-hover:scale-105 text-slate-900">
-                  <Storefront size={36} weight="bold" />
-                </div>
-              </div>
-              <div className="flex items-start justify-between gap-3 px-1">
-                <div>
-                  <h3 className="text-sm font-black text-slate-950">{p.name}</h3>
-                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">{p.category}</p>
-                </div>
-                <span className="mt-0.5 flex items-center gap-1 text-[9px] font-black text-emerald-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> LIVE</span>
-              </div>
-              <p className="mt-3 line-clamp-2 min-h-10 px-1 text-xs leading-5 text-slate-500">{p.description}</p>
-              <div className="mt-4 flex items-end justify-between border-t border-slate-100 px-1 pt-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="account-price text-lg font-black">{money(p.price)}</span>
-                    <span className="text-[10px] text-slate-400 line-through">{money(p.originalPrice)}</span>
+          {visible.map((p) => {
+            const isFavorite = favoriteIds.includes(p.id);
+
+            return (
+              <div key={p.id} className="account-card group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition duration-300 hover:-translate-y-1.5 hover:border-blue-300 hover:shadow-xl">
+                <button
+                  type="button"
+                  aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const nextIds = toggleWishlistProduct(p.id);
+                    setFavoriteIds(nextIds);
+                  }}
+                  className={`absolute right-3 top-3 z-10 rounded-full border p-2 transition ${isFavorite ? "border-rose-200 bg-rose-50 text-rose-600 shadow-sm" : "border-slate-200 bg-white/90 text-slate-500 hover:border-rose-200 hover:text-rose-500"}`}
+                >
+                  <Heart size={16} weight={isFavorite ? "fill" : "regular"} />
+                </button>
+
+                <Link href={`/product/${p.id}`} className="block">
+                  <div className={`relative mb-4 flex aspect-[1.45] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br ${p.color}`}>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,.25),transparent_45%)]" />
+                    <div className="relative grid h-20 w-20 place-items-center rounded-[1.4rem] bg-white/95 p-3 shadow-2xl ring-4 ring-white/20 transition duration-300 group-hover:scale-105 text-slate-900">
+                      <Storefront size={36} weight="bold" />
+                    </div>
                   </div>
-                  <span className="account-savings text-[10px] font-bold">Save {Math.round((1 - p.price / p.originalPrice) * 100)}% today</span>
-                </div>
-                <span className="account-card-button rounded-lg px-3 py-2 text-[11px] font-black text-[#09120b] transition group-hover:brightness-110">View account</span>
+                  <div className="flex items-start justify-between gap-3 px-1">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-950">{p.name}</h3>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">{p.category}</p>
+                    </div>
+                    <span className="mt-0.5 flex items-center gap-1 text-[9px] font-black text-emerald-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> LIVE</span>
+                  </div>
+                  <p className="mt-3 line-clamp-2 min-h-10 px-1 text-xs leading-5 text-slate-500">{p.description}</p>
+                  <div className="mt-4 flex items-end justify-between border-t border-slate-100 px-1 pt-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="account-price text-lg font-black">{money(p.price, getStoredCurrency())}</span>
+                        <span className="text-[10px] text-slate-400 line-through">{money(p.originalPrice, getStoredCurrency())}</span>
+                      </div>
+                      <span className="account-savings text-[10px] font-bold">Save {Math.round((1 - p.price / p.originalPrice) * 100)}% today</span>
+                    </div>
+                    <span className="account-card-button rounded-lg px-3 py-2 text-[11px] font-black text-[#09120b] transition group-hover:brightness-110">View account</span>
+                  </div>
+                </Link>
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
     </Shell>
