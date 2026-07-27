@@ -11,11 +11,30 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    const syncOrders = () => {
-      setOrders(getOrders());
+    const syncOrders = async () => {
+      const localOrders = getOrders();
+      setOrders(localOrders);
+
+      try {
+        const response = await fetch("http://localhost:4000/api/orders");
+        if (response.ok) {
+          const remoteOrders = await response.json();
+          if (Array.isArray(remoteOrders)) {
+            setOrders(remoteOrders.map((order: any) => ({
+              id: order.id,
+              product: order.productId || "JoeLink product",
+              date: new Date(order.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
+              amount: Number(order.amount || 0),
+              status: order.status === "completed" ? "Completed" : order.status,
+            })));
+          }
+        }
+      } catch {
+        // fall back to local order history
+      }
     };
 
-    syncOrders();
+    void syncOrders();
     window.addEventListener("storage", syncOrders);
     window.addEventListener("joelink-account-updated", syncOrders);
 

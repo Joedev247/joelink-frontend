@@ -106,7 +106,7 @@ export function OrderDetailsContent({ order, product }: OrderDetailsContentProps
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Included features</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {product.features.map((feature) => (
+            {(product.features ?? []).map((feature) => (
               <span key={feature} className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
                 {feature}
               </span>

@@ -3,13 +3,15 @@ import Link from "next/link";
 import { Storefront, ArrowRight, Heart } from "@phosphor-icons/react/dist/ssr";
 import { useEffect, useState } from "react";
 import { Shell, PageTitle } from "@/components/shell";
-import { categories, products, money, getWishlistProductIds, toggleWishlistProduct } from "@/lib/store";
+import { categories, products as fallbackProducts, money, getWishlistProductIds, toggleWishlistProduct } from "@/lib/store";
 import { getStoredCurrency } from "@/lib/currency";
+import { getProducts } from "@/lib/api";
 
 export default function ProductsPage() {
   const [category, setCategory] = useState("All accounts");
   const [query, setQuery] = useState("");
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+  const [catalog, setCatalog] = useState(fallbackProducts);
 
   useEffect(() => {
     const syncFavorites = () => setFavoriteIds(getWishlistProductIds());
@@ -17,13 +19,17 @@ export default function ProductsPage() {
     window.addEventListener("storage", syncFavorites);
     window.addEventListener("joelink-account-updated", syncFavorites);
 
+    void getProducts()
+      .then((products) => setCatalog(products))
+      .catch(() => setCatalog(fallbackProducts));
+
     return () => {
       window.removeEventListener("storage", syncFavorites);
       window.removeEventListener("joelink-account-updated", syncFavorites);
     };
   }, []);
 
-  const visible = products.filter((p) => {
+  const visible = catalog.filter((p) => {
     const matchesCategory = category === "All accounts" || p.category === category;
     const q = query.trim().toLowerCase();
     const hay = `${p.name} ${p.description} ${p.category}`.toLowerCase();
@@ -113,9 +119,9 @@ export default function ProductsPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="account-price text-lg font-black">{money(p.price, getStoredCurrency())}</span>
-                        <span className="text-[10px] text-slate-400 line-through">{money(p.originalPrice, getStoredCurrency())}</span>
+                        <span className="text-[10px] text-slate-400 line-through">{money(p.originalPrice ?? p.price * 1.35, getStoredCurrency())}</span>
                       </div>
-                      <span className="account-savings text-[10px] font-bold">Save {Math.round((1 - p.price / p.originalPrice) * 100)}% today</span>
+                      <span className="account-savings text-[10px] font-bold">Save {Math.round((1 - p.price / (p.originalPrice ?? p.price * 1.35)) * 100)}% today</span>
                     </div>
                     <span className="account-card-button rounded-lg px-3 py-2 text-[11px] font-black text-[#09120b] transition group-hover:brightness-110">View account</span>
                   </div>

@@ -1,6 +1,6 @@
 import { formatCurrencyWithSymbol, getStoredCurrency, type CurrencyCode } from "./currency";
 
-export type Product = { id: number; name: string; category: string; description: string; price: number; originalPrice: number; stock: number; icon?: string; color: string; features: string[] };
+export type Product = { id: number; name: string; category: string; description: string; price: number; originalPrice?: number; stock?: number; icon?: string; color?: string; features?: string[]; credentials?: { username?: string; password?: string; email?: string; recoveryEmail?: string; notes?: string } };
 export type Order = { id: string; product: string; date: string; amount: number; status: string };
 export type WishlistItem = { id: number; name: string; price: number; category: string; tag: string };
 

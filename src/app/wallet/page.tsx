@@ -34,13 +34,25 @@ export default function WalletPage() {
   const currency = getStoredCurrency();
 
   useEffect(() => {
-    const syncWallet = () => {
+    const syncWallet = async () => {
       const wallet = getWalletState();
       setBalance(wallet.balance);
       setTransactions(wallet.transactions);
+
+      try {
+        const response = await fetch(`http://localhost:4000/api/wallet/transactions?userId=user_2`);
+        if (response.ok) {
+          const remoteTransactions = await response.json();
+          if (Array.isArray(remoteTransactions)) {
+            setTransactions(remoteTransactions as WalletTransaction[]);
+          }
+        }
+      } catch {
+        // fall back to local wallet state
+      }
     };
 
-    syncWallet();
+    void syncWallet();
     window.addEventListener("joelink-account-updated", syncWallet);
     window.addEventListener("storage", syncWallet);
 

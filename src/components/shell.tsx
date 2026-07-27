@@ -15,6 +15,7 @@ import {
   SignOut,
   UserCircle,
   ArrowRight,
+  
 } from "@phosphor-icons/react/dist/ssr";
 import { formatCurrency, getUnreadNotificationCount, getWalletState, type WalletTransaction } from "@/lib/wallet";
 import { getStoredCurrency } from "@/lib/currency";

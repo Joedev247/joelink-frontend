@@ -7,6 +7,7 @@ import { ArrowLeft, Bank, CreditCard, Phone, CheckCircle, CircleNotch } from "@p
 import { Shell, PageTitle } from "@/components/shell";
 import { addWalletDeposit, formatCurrency, getWalletState } from "@/lib/wallet";
 import { getStoredCurrency } from "@/lib/currency";
+import { createWalletDeposit } from "@/lib/api";
 
 export default function WalletAddFundsPage() {
   const router = useRouter();
@@ -55,11 +56,25 @@ export default function WalletAddFundsPage() {
     setDepositState("processing");
 
     window.setTimeout(() => {
-      const depositLabel = paymentMethod === "MOMO" ? `Mobile money (${network})` : "Card";
-      const nextState = addWalletDeposit(amount, depositLabel);
-      setBalance(nextState.balance);
-      window.dispatchEvent(new Event("joelink-account-updated"));
-      setDepositState("success");
+      void (async () => {
+        const depositLabel = paymentMethod === "MOMO" ? `Mobile money (${network})` : "Card";
+
+        try {
+          await createWalletDeposit({
+            userId: "user_2",
+            type: "deposit",
+            amount,
+            description: depositLabel,
+          });
+        } catch {
+          // fall back to local wallet update if the backend is unavailable
+        }
+
+        const nextState = addWalletDeposit(amount, depositLabel);
+        setBalance(nextState.balance);
+        window.dispatchEvent(new Event("joelink-account-updated"));
+        setDepositState("success");
+      })();
     }, 1100);
   }
 

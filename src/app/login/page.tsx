@@ -1,18 +1,27 @@
 "use client";
 
-import { type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/shell";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Simple dev-side admin detection: exact match sends to admin
+    const isAdmin = email === "admin@joelink.test" && password === "admin";
     window.localStorage.setItem("joelink-account-created", "true");
+    window.localStorage.setItem("joelink-account-role", isAdmin ? "admin" : "customer");
     window.dispatchEvent(new Event("joelink-account-updated"));
-    router.push("/");
+    if (isAdmin) {
+      router.push("/admin");
+    } else {
+      router.push("/");
+    }
   }
 
   return (
@@ -31,6 +40,8 @@ export default function LoginPage() {
                   <input
                     type="email"
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                     placeholder="you@example.com"
                   />
@@ -40,6 +51,8 @@ export default function LoginPage() {
                   <input
                     type="password"
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                     placeholder="••••••••"
                   />

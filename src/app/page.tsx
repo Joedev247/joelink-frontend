@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -13,8 +15,11 @@ import {
   Star,
   SealCheck,
 } from "@phosphor-icons/react/dist/ssr";
+import { useEffect, useState } from "react";
 import { Shell } from "@/components/shell";
-import { money, products } from "@/lib/store";
+import { money, products as fallbackProducts } from "@/lib/store";
+import { getProducts } from "@/lib/api";
+import { getStoredCurrency } from "@/lib/currency";
 
 const platforms = [
   { name: "Instagram", logo: "/social/instagram.svg" },
@@ -26,6 +31,14 @@ const platforms = [
 ];
 
 export default function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState(fallbackProducts.slice(0, 4));
+
+  useEffect(() => {
+    void getProducts()
+      .then((products) => setFeaturedProducts(products.slice(0, 4)))
+      .catch(() => setFeaturedProducts(fallbackProducts.slice(0, 4)));
+  }, []);
+
   return (
     <Shell>
       <div className="mb-30">
@@ -123,7 +136,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {products.slice(0, 4).map((product) => (
+            {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -490,9 +503,10 @@ function FloatingSocials() {
   );
 }
 
-function ProductCard({ product }: { product: (typeof products)[number] }) {
+function ProductCard({ product }: { product: (typeof fallbackProducts)[number] }) {
   const logo = productLogo(product.name);
-  const savings = Math.round((1 - product.price / product.originalPrice) * 100);
+  const originalPrice = product.originalPrice ?? product.price * 1.35;
+  const savings = Math.round((1 - product.price / originalPrice) * 100);
 
   return (
     <Link
@@ -534,7 +548,7 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
               {money(product.price, getStoredCurrency())}
             </span>
             <span className="text-[10px] text-slate-400 line-through">
-              {money(product.originalPrice, getStoredCurrency())}
+              {money(product.originalPrice ?? product.price * 1.35, getStoredCurrency())}
             </span>
           </div>
           <span className="account-savings text-[10px] font-bold">

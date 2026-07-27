@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle, CircleNotch } from "@phosphor-icons/react/dist/
 import { createOrderFromProduct, money } from "@/lib/store";
 import { getStoredCurrency } from "@/lib/currency";
 import { applyPurchaseToWallet } from "@/lib/wallet";
+import { createOrder, createWalletDeposit } from "@/lib/api";
 import type { Product } from "@/lib/store";
 
 type ProductDetailClientProps = {
@@ -25,10 +26,29 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
     setCheckoutState("processing");
     window.setTimeout(() => {
-      createOrderFromProduct(product);
-      applyPurchaseToWallet(product.price, product.name);
-      window.dispatchEvent(new Event("joelink-account-updated"));
-      setCheckoutState("success");
+      void (async () => {
+        try {
+          await createOrder({
+            userId: "user_2",
+            productId: String(product.id),
+            amount: product.price,
+            status: "completed",
+          });
+          await createWalletDeposit({
+            userId: "user_2",
+            type: "purchase",
+            amount: product.price,
+            description: product.name,
+          });
+        } catch {
+          // fall back to local-only behavior if the backend is unavailable
+        }
+
+        createOrderFromProduct(product);
+        applyPurchaseToWallet(product.price, product.name);
+        window.dispatchEvent(new Event("joelink-account-updated"));
+        setCheckoutState("success");
+      })();
     }, 1400);
   }
 
@@ -54,7 +74,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
               {product.category}
             </span>
             <span className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
-              {Math.round((1 - product.price / product.originalPrice) * 100)}% off
+              {Math.round((1 - product.price / (product.originalPrice ?? product.price * 1.35)) * 100)}% off
             </span>
           </div>
 
@@ -70,7 +90,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           <div className="flex items-start justify-between gap-3 rounded-[1.5rem] bg-slate-50 p-4">
             <div>
               <p className="text-xl font-black text-slate-950 sm:text-2xl">{money(product.price, getStoredCurrency())}</p>
-              <p className="mt-1 text-xs text-slate-500 line-through">{money(product.originalPrice, getStoredCurrency())}</p>
+              <p className="mt-1 text-xs text-slate-500 line-through">{money(product.originalPrice ?? product.price * 1.35, getStoredCurrency())}</p>
             </div>
             <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
               Best value
@@ -78,7 +98,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2">
-            {product.features.map((feature) => (
+            {(product.features ?? []).map((feature) => (
               <div key={feature} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
                 {feature}
               </div>
