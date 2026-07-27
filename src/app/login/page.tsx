@@ -1,7 +1,20 @@
+"use client";
+
+import { type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Shell } from "@/components/shell";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    window.localStorage.setItem("joelink-account-created", "true");
+    window.dispatchEvent(new Event("joelink-account-updated"));
+    router.push("/");
+  }
+
   return (
     <Shell>
       <div className="min-h-screen bg-slate-50 px-0 py-0 flex flex-col justify-end">
@@ -12,7 +25,7 @@ export default function LoginPage() {
             </div>
 
             <div className="border-t border-slate-200 bg-white px-6 py-7 sm:px-8">
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleLogin}>
                 <label className="block text-sm font-semibold text-slate-900">
                   Email
                   <input

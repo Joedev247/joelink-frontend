@@ -12,7 +12,7 @@ export default function RegisterPage() {
     event.preventDefault();
     window.localStorage.setItem("joelink-account-created", "true");
     window.dispatchEvent(new Event("joelink-account-updated"));
-    router.push("/login");
+    router.push("/");
   }
 
   return (
