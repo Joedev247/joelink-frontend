@@ -76,7 +76,7 @@ export default function WalletPage() {
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-black/90">Balance</p>
               <div className="mt-2 flex items-baseline gap-2">
-                <p className="text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
+                <p className="numeric-display text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
                 <span className="text-sm uppercase tracking-widest text-black/80">{getStoredCurrency()}</span>
               </div>
             </div>
@@ -116,7 +116,7 @@ export default function WalletPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
-                  <p className="text-base font-black text-slate-950">{formatTransactionAmount(tx, currency)}</p>
+                  <p className="numeric-display text-base font-black text-slate-950">{formatTransactionAmount(tx, currency)}</p>
                   <p className="text-xs text-slate-500">{tx.date}</p>
                 </div>
               </div>

@@ -90,7 +90,7 @@ export default function OrdersPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
-                  <p className="text-base font-black text-slate-950">{money(order.amount, getStoredCurrency())}</p>
+                  <p className="numeric-display text-base font-black text-slate-950">{money(order.amount, getStoredCurrency())}</p>
                   <Link
                     href={`/orders/${encodeURIComponent(order.id)}`}
                     className="inline-flex items-center gap-2 rounded-lg bg-[#a3f45f] px-3 py-2 text-xs font-bold text-[#09120b] shadow-xs transition hover:bg-[#94d34c] whitespace-nowrap"

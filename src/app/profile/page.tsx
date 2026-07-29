@@ -99,7 +99,7 @@ export default function ProfilePage() {
               <div className="grid gap-4 p-5 sm:grid-cols-3 sm:p-6">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Wallet balance</p>
-                  <p className="mt-2 text-xl font-black text-slate-950">{money(walletBalance, currency)}</p>
+                  <p className="mt-2 text-xl font-black text-slate-950 numeric-display">{money(walletBalance, currency)}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Orders</p>

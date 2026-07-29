@@ -123,7 +123,7 @@ export default function WalletAddFundsPage() {
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-black/90">Balance</p>
                   <div className="mt-2 flex items-baseline gap-2">
-                    <p className="text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
+                    <p className="numeric-display text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
                     <span className="text-sm uppercase tracking-widest text-black/80">{getStoredCurrency()}</span>
                   </div>
                 </div>

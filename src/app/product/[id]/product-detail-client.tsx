@@ -89,8 +89,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
           <div className="flex items-start justify-between gap-3 rounded-[1.5rem] bg-slate-50 p-4">
             <div>
-              <p className="text-xl font-black text-slate-950 sm:text-2xl">{money(product.price, getStoredCurrency())}</p>
-              <p className="mt-1 text-xs text-slate-500 line-through">{money(product.originalPrice ?? product.price * 1.35, getStoredCurrency())}</p>
+              <p className="numeric-display text-xl font-black text-slate-950 sm:text-2xl">{money(product.price, getStoredCurrency())}</p>
+              <p className="numeric-display mt-1 text-xs text-slate-500 line-through">{money(product.originalPrice ?? product.price * 1.35, getStoredCurrency())}</p>
             </div>
             <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
               Best value

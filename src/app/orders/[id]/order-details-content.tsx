@@ -53,7 +53,7 @@ export function OrderDetailsContent({ order, product }: OrderDetailsContentProps
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2">
               <dt className="text-slate-500">Amount paid</dt>
-              <dd className="font-semibold text-slate-900">{money(order.amount, getStoredCurrency())}</dd>
+              <dd className="numeric-display font-semibold text-slate-900">{money(order.amount, getStoredCurrency())}</dd>
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2">
               <dt className="text-slate-500">Delivery</dt>

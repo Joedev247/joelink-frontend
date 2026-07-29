@@ -131,7 +131,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:flex"
                   >
                     <WalletIcon size={16} weight="bold" className="text-[#0f766e]" />
-                    <span>{formatCurrency(balance, getStoredCurrency())}</span>
+                    <span className="numeric-display">{formatCurrency(balance, getStoredCurrency())}</span>
                   </Link>
 
                   <div className="relative">
