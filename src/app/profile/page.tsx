@@ -19,6 +19,16 @@ export default function ProfilePage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
+  const profileHandle = (fullName || email || "user").trim().toLowerCase().replace(/[^a-z0-9._]+/g, "") || "user";
+  const profileInitials = (fullName || email || "User")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0] ?? "")
+    .join("")
+    .toUpperCase() || "U";
+
   useEffect(() => {
     const syncProfile = async () => {
       try {
@@ -119,12 +129,13 @@ export default function ProfilePage() {
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
                     <div className="grid h-16 w-16 place-items-center rounded-full bg-white/15 text-2xl font-black backdrop-blur text-black">
-                      J
+                      {profileInitials}
                     </div>
                     <div>
                       <p className="text-sm font-semibold uppercase tracking-[0.24em] text-black/80">User profile</p>
                       <h2 className="mt-1 text-2xl font-black text-black">{fullName || "Your profile"}</h2>
                       <p className="mt-1 text-sm text-black/80">{email || "Sign in to see your account details."}</p>
+                      <p className="mt-1 text-sm font-semibold text-black/70">@{profileHandle}</p>
                     </div>
                   </div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 text-black px-3 py-2 text-sm font-semibold">

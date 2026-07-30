@@ -21,6 +21,23 @@ import { formatCurrency, getUnreadNotificationCount, getWalletState, type Wallet
 import { getStoredCurrency } from "@/lib/currency";
 import { getCurrentUser, getNotifications, logoutUser } from "@/lib/api";
 
+function getInitials(value: string | null | undefined) {
+  const source = String(value ?? "").trim();
+  if (!source) {
+    return "U";
+  }
+
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return "U";
+  }
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
+}
+
 const nav = [
   {
     href: "/",
@@ -58,6 +75,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [isBooting, setIsBooting] = useState(true);
+  const [profileName, setProfileName] = useState("Profile");
+  const [profileInitials, setProfileInitials] = useState("U");
   const hideShellExtras = pathname === "/login" || pathname === "/register";
 
   const unreadCount = useMemo(() => {
@@ -83,8 +102,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
       try {
         const me = await getCurrentUser();
         const user = me?.user;
+        const storedName = window.localStorage.getItem("joelink-account-name") || "";
+        const accountName = user?.name || storedName || "Profile";
         const accountCreated = Boolean(user || window.localStorage.getItem("joelink-account-created") === "true");
         setHasAccount(accountCreated);
+        setProfileName(accountName);
+        setProfileInitials(getInitials(accountName));
         if (accountCreated && user) {
           const wallet = getWalletState();
           setBalance(wallet.balance);
@@ -102,7 +125,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
       }
 
       const accountCreated = window.localStorage.getItem("joelink-account-created") === "true";
+      const storedName = window.localStorage.getItem("joelink-account-name") || "";
+      const accountName = storedName || "Profile";
       setHasAccount(accountCreated);
+      setProfileName(accountName);
+      setProfileInitials(getInitials(accountName));
       if (accountCreated) {
         const wallet = getWalletState();
         setBalance(wallet.balance);
@@ -119,6 +146,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
         setBalance(0);
         setNotifications([]);
         setRemoteNotifications([]);
+        setProfileName("Profile");
+        setProfileInitials("U");
       }
     };
 
@@ -247,9 +276,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                       className="flex items-center gap-2 rounded-full p-1.5 pr-3 shadow text-sm font-semibold text-slate-700 transition"
                     >
                       <span className="grid h-8 w-8 place-items-center rounded-full bg-[#071426] text-[10px] font-black text-[#a3f45f] shadow-sm">
-                        JD
+                        {profileInitials}
                       </span>
-                      <span className="hidden sm:block">Profile</span>
+                      <span className="hidden max-w-[110px] truncate sm:block">{profileName}</span>
                       <CaretDown size={14} weight="bold" />
                     </button>
 
@@ -275,6 +304,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
                           window.localStorage.removeItem("joelink-account-name");
                           window.localStorage.removeItem("joelink-account-email");
                           window.localStorage.removeItem("joelink-account-password");
+                          setProfileName("Profile");
+                          setProfileInitials("U");
                           window.dispatchEvent(new Event("joelink-account-updated"));
                           setMenuOpen(false);
                         }}>
