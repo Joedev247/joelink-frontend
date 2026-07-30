@@ -123,7 +123,7 @@ export default function WalletAddFundsPage() {
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-black/90">Balance</p>
                   <div className="mt-2 flex items-baseline gap-2">
-                    <p className="numeric-display text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
+                    <p className="text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
                     <span className="text-sm uppercase tracking-widest text-black/80">{getStoredCurrency()}</span>
                   </div>
                 </div>
@@ -229,7 +229,7 @@ export default function WalletAddFundsPage() {
                       min="1"
                       value={amountInput}
                       onChange={(event) => setAmountInput(event.target.value)}
-                      placeholder="100.00"
+                      placeholder="$100.00"
                       className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-950 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
                     />
                   </label>

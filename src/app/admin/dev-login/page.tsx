@@ -10,6 +10,7 @@ export default function AdminDevLogin() {
     // Set dev admin role and mark account created, then redirect to /admin
     window.localStorage.setItem("joelink-account-role", "admin");
     window.localStorage.setItem("joelink-account-created", "true");
+    window.localStorage.setItem("joelink-account-user-id", "user_1");
     window.dispatchEvent(new Event("joelink-account-updated"));
     router.replace("/admin");
   }, [router]);

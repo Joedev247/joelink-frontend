@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Copy, Gift, ShieldCheck, Sparkle, UserCircle, HeartBreak } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
-import { getOrders, getWishlistItems, money, type WishlistItem } from "@/lib/store";
-import { getWalletState } from "@/lib/wallet";
+import { getWishlistItems, money, type WishlistItem } from "@/lib/store";
+import { getCurrentUser, getOrders, getWalletTransactions, updateUser } from "@/lib/api";
 import { SUPPORTED_CURRENCIES, type CurrencyCode } from "@/lib/currency";
 
 export default function ProfilePage() {
@@ -15,30 +15,56 @@ export default function ProfilePage() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [orderCount, setOrderCount] = useState(0);
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [memberSince, setMemberSince] = useState("Jan 2026");
+  const [memberSince, setMemberSince] = useState(" ");
   const [statusMessage, setStatusMessage] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const syncProfile = () => {
-      if (typeof window === "undefined") {
-        return;
+    const syncProfile = async () => {
+      try {
+        const response = await getCurrentUser();
+        const currentUser = response?.user;
+
+        if (currentUser) {
+          const storedCurrency = (window.localStorage.getItem("joelink-profile-currency") as CurrencyCode | null) || "CFA";
+          const nextCurrency = SUPPORTED_CURRENCIES.includes(storedCurrency) ? storedCurrency : "CFA";
+
+          setUserId(String(currentUser.id || ""));
+          setFullName(String(currentUser.name || ""));
+          setEmail(String(currentUser.email || ""));
+          setCurrency(nextCurrency);
+          setWalletBalance(Number(currentUser.walletBalance ?? 0));
+          setMemberSince(
+            currentUser.createdAt
+              ? new Date(currentUser.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+              : ""
+          );
+
+          const walletTransactions = await getWalletTransactions(String(currentUser.id));
+          const nextBalance = walletTransactions.reduce((sum, tx) => sum + Number(tx.amountValue ?? tx.amount ?? 0), 0);
+          setWalletBalance(nextBalance);
+
+          const orders = await getOrders();
+          const userOrders = orders.filter((order) => String(order.userId ?? order.user_id ?? "") === String(currentUser.id));
+          setOrderCount(userOrders.length);
+          setWishlistItems(getWishlistItems());
+          return;
+        }
+      } catch {
+        // Fall back to empty values rather than dummy defaults.
       }
 
-      const storedName = window.localStorage.getItem("joelink-profile-name") || "Joedev";
-      const storedEmail = window.localStorage.getItem("joelink-profile-email") || "joedev@gmail.com";
-      const storedCurrency = (window.localStorage.getItem("joelink-profile-currency") as CurrencyCode | null) || "CFA";
-      const storedMemberDate = window.localStorage.getItem("joelink-profile-member-since") || "Jan 2026";
-
-      setFullName(storedName);
-      setEmail(storedEmail);
-      setCurrency(SUPPORTED_CURRENCIES.includes(storedCurrency) ? storedCurrency : "CFA");
-      setMemberSince(storedMemberDate);
-      setWalletBalance(getWalletState().balance);
-      setOrderCount(getOrders().length);
+      setUserId(null);
+      setFullName("");
+      setEmail("");
+      setCurrency("CFA");
+      setWalletBalance(0);
+      setOrderCount(0);
+      setMemberSince("");
       setWishlistItems(getWishlistItems());
     };
 
-    syncProfile();
+    void syncProfile();
     window.addEventListener("storage", syncProfile);
     window.addEventListener("joelink-account-updated", syncProfile);
 
@@ -48,19 +74,31 @@ export default function ProfilePage() {
     };
   }, []);
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (typeof window === "undefined") {
       return;
     }
 
-    const nextName = fullName.trim() || "Joedev";
-    const nextEmail = email.trim() || "joedev@gmail.com";
+    const nextName = fullName.trim() || "";
+    const nextEmail = email.trim() || "";
     const nextCurrency = currency || "CFA";
+
+    if (userId) {
+      try {
+        await updateUser(userId, {
+          name: nextName,
+          email: nextEmail,
+        });
+      } catch {
+        setStatusMessage("Could not update your profile right now.");
+        return;
+      }
+    }
 
     window.localStorage.setItem("joelink-profile-name", nextName);
     window.localStorage.setItem("joelink-profile-email", nextEmail);
     window.localStorage.setItem("joelink-profile-currency", nextCurrency);
-    window.localStorage.setItem("joelink-profile-member-since", memberSince || "Jan 2026");
+    window.localStorage.setItem("joelink-profile-member-since", memberSince || "");
     window.dispatchEvent(new Event("joelink-account-updated"));
     setStatusMessage("Profile updated successfully.");
   };
@@ -85,8 +123,8 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold uppercase tracking-[0.24em] text-black/80">User profile</p>
-                      <h2 className="mt-1 text-2xl font-black text-black">{fullName}</h2>
-                      <p className="mt-1 text-sm text-black/80">{email}</p>
+                      <h2 className="mt-1 text-2xl font-black text-black">{fullName || "Your profile"}</h2>
+                      <p className="mt-1 text-sm text-black/80">{email || "Sign in to see your account details."}</p>
                     </div>
                   </div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 text-black px-3 py-2 text-sm font-semibold">

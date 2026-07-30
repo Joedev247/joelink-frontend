@@ -89,8 +89,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
           <div className="flex items-start justify-between gap-3 rounded-[1.5rem] bg-slate-50 p-4">
             <div>
-              <p className="numeric-display text-xl font-black text-slate-950 sm:text-2xl">{money(product.price, getStoredCurrency())}</p>
-              <p className="numeric-display mt-1 text-xs text-slate-500 line-through">{money(product.originalPrice ?? product.price * 1.35, getStoredCurrency())}</p>
+              <p className="text-xl font-black text-slate-950 sm:text-2xl numeric-display">{money(product.price, getStoredCurrency())}</p>
+              <p className="mt-1 text-xs text-slate-500 line-through numeric-display">{money(product.originalPrice ?? product.price * 1.35, getStoredCurrency())}</p>
             </div>
             <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
               Best value
@@ -104,6 +104,25 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
               </div>
             ))}
           </div>
+
+          {product.credentials && (
+            <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#0f766e]">Included access</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-700">Access details are shared after purchase.</p>
+                </div>
+                <span className="rounded-full bg-[#a3f45f]/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#0f766e]">
+                  Ready
+                </span>
+              </div>
+              {product.credentials.notes ? (
+                <p className="mt-3 text-sm text-slate-600">
+                  <span className="font-semibold text-slate-900">Notes:</span> {product.credentials.notes}
+                </p>
+              ) : null}
+            </div>
+          )}
 
           <div className="space-y-3">
             <button

@@ -5,14 +5,17 @@ import { useEffect, useState } from "react";
 import { Shell, PageTitle } from "@/components/shell";
 import { formatCurrency, getWalletState, type WalletTransaction } from "@/lib/wallet";
 import { convertAmount, getStoredCurrency, type CurrencyCode } from "@/lib/currency";
+import { getWalletTransactions } from "@/lib/api";
 
 function formatTransactionAmount(tx: WalletTransaction, currency: CurrencyCode) {
   const amountValue = typeof tx.amountValue === "number" && Number.isFinite(tx.amountValue)
     ? tx.amountValue
-    : Number(tx.amount.replace(/[^0-9.-]/g, ""));
+    : typeof tx.amount === "number"
+      ? tx.amount
+      : Number(String(tx.amount).replace(/[^0-9.-]/g, ""));
 
   if (!Number.isFinite(amountValue)) {
-    return tx.amount;
+    return typeof tx.amount === "string" ? tx.amount : String(tx.amount ?? "");
   }
 
   const convertedAmount = tx.kind === "deposit"
@@ -40,12 +43,9 @@ export default function WalletPage() {
       setTransactions(wallet.transactions);
 
       try {
-        const response = await fetch(`http://localhost:4000/api/wallet/transactions?userId=user_2`);
-        if (response.ok) {
-          const remoteTransactions = await response.json();
-          if (Array.isArray(remoteTransactions)) {
-            setTransactions(remoteTransactions as WalletTransaction[]);
-          }
+        const remoteTransactions = await getWalletTransactions("user_2");
+        if (Array.isArray(remoteTransactions)) {
+          setTransactions(remoteTransactions);
         }
       } catch {
         // fall back to local wallet state
@@ -76,7 +76,7 @@ export default function WalletPage() {
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-black/90">Balance</p>
               <div className="mt-2 flex items-baseline gap-2">
-                <p className="numeric-display text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
+                <p className="text-3xl font-black tracking-tight sm:text-4xl">{formatCurrency(balance, getStoredCurrency())}</p>
                 <span className="text-sm uppercase tracking-widest text-black/80">{getStoredCurrency()}</span>
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function WalletPage() {
                     <p className="text-xs text-slate-500">{tx.method}</p>
                   </div>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${
-                    tx.status === "Pending"
+                    tx.status.toLowerCase() === "pending"
                       ? "bg-amber-100 text-amber-800"
                       : "bg-emerald-100 text-emerald-800"
                   }`}>
@@ -116,8 +116,8 @@ export default function WalletPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
-                  <p className="numeric-display text-base font-black text-slate-950">{formatTransactionAmount(tx, currency)}</p>
-                  <p className="text-xs text-slate-500">{tx.date}</p>
+                  <p className="text-base font-black text-slate-950 numeric-display">{formatTransactionAmount(tx, currency)}</p>
+                  <p className="text-xs text-slate-500">{tx.time ? `${tx.date} · ${tx.time}` : tx.date}</p>
                 </div>
               </div>
             ))}

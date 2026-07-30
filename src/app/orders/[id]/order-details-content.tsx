@@ -11,6 +11,7 @@ type OrderDetailsContentProps = {
     id: string;
     product: string;
     date: string;
+    time?: string;
     amount: number;
     status: string;
   };
@@ -19,7 +20,11 @@ type OrderDetailsContentProps = {
 
 export function OrderDetailsContent({ order, product }: OrderDetailsContentProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const password = product ? "SecurePass123" : "••••••••";
+  const username = product?.credentials?.username || product?.name || order.product;
+  const password = product?.credentials?.password || "••••••••";
+  const email = product?.credentials?.email;
+  const recoveryEmail = product?.credentials?.recoveryEmail;
+  const notes = product?.credentials?.notes;
 
   return (
     <section className="mt-5 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
@@ -49,11 +54,11 @@ export function OrderDetailsContent({ order, product }: OrderDetailsContentProps
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2">
               <dt className="text-slate-500">Purchased on</dt>
-              <dd className="font-semibold text-slate-900">{order.date}</dd>
+              <dd className="font-semibold text-slate-900">{order.time ? `${order.date} · ${order.time}` : order.date}</dd>
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2">
               <dt className="text-slate-500">Amount paid</dt>
-              <dd className="numeric-display font-semibold text-slate-900">{money(order.amount, getStoredCurrency())}</dd>
+              <dd className="font-semibold text-slate-900 numeric-display">{money(order.amount, getStoredCurrency())}</dd>
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2">
               <dt className="text-slate-500">Delivery</dt>
@@ -76,7 +81,7 @@ export function OrderDetailsContent({ order, product }: OrderDetailsContentProps
           <div className="mt-4 space-y-3">
             <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Username</p>
-              <p className="mt-1 font-semibold">{product?.name ?? order.product}</p>
+              <p className="mt-1 font-semibold">{username}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
               <div className="flex items-start justify-between gap-3">
@@ -94,6 +99,24 @@ export function OrderDetailsContent({ order, product }: OrderDetailsContentProps
                 </button>
               </div>
             </div>
+            {email ? (
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Email</p>
+                <p className="mt-1 font-semibold">{email}</p>
+              </div>
+            ) : null}
+            {recoveryEmail ? (
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Recovery email</p>
+                <p className="mt-1 font-semibold">{recoveryEmail}</p>
+              </div>
+            ) : null}
+            {notes ? (
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Notes</p>
+                <p className="mt-1 font-semibold">{notes}</p>
+              </div>
+            ) : null}
           </div>
 
           <p className="mt-4 text-sm leading-6 text-slate-300">

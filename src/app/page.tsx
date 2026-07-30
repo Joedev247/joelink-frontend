@@ -544,10 +544,10 @@ function ProductCard({ product }: { product: (typeof fallbackProducts)[number] }
       <div className="mt-4 flex items-end justify-between border-t border-slate-100 px-1 pt-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="account-price numeric-display text-lg font-black">
+            <span className="account-price text-lg font-black">
               {money(product.price, getStoredCurrency())}
             </span>
-            <span className="numeric-display text-[10px] text-slate-400 line-through">
+            <span className="text-[10px] text-slate-400 line-through">
               {money(product.originalPrice ?? product.price * 1.35, getStoredCurrency())}
             </span>
           </div>

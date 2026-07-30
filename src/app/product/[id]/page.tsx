@@ -10,14 +10,18 @@ export default async function ProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const productId = Number(id);
-  let product = fallbackProducts.find((p) => p.id === productId);
+  const requestedId = String(id).trim();
+  const productId = Number(requestedId);
+  let product = fallbackProducts.find((p) => p.id === productId || String(p.id) === requestedId);
 
   try {
     const remoteProducts = await getProducts();
-    product = remoteProducts.find((item) => item.id === productId) ?? product;
+    product = remoteProducts.find((item) => {
+      const itemId = Number(item.id);
+      return (Number.isFinite(itemId) && itemId === productId) || String(item.id) === requestedId;
+    }) ?? product;
   } catch {
-    product = product ?? fallbackProducts.find((p) => p.id === productId);
+    product = product ?? fallbackProducts.find((p) => p.id === productId || String(p.id) === requestedId);
   }
 
   if (!product) notFound();

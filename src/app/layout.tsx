@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { Raleway } from "next/font/google";
+import { Inter, Raleway } from "next/font/google";
 import "./globals.css";
 
 const raleway = Raleway({
   variable: "--font-raleway",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const digits = Inter({
+  variable: "--font-digits",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -19,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${raleway.variable} h-full antialiased`}>
+    <html lang="en" className={`${raleway.variable} ${digits.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { House, PlusCircle, ShoppingCart, Bank, Bell, UserCircle, CaretDown, Receipt } from "@phosphor-icons/react/dist/ssr";
-import { getNotifications } from "@/lib/api";
+import { House, ShoppingBagOpen, ShoppingCart, Bank, Bell, UserCircle, CaretDown, Receipt } from "@phosphor-icons/react/dist/ssr";
+import { getCurrentUser, getNotifications, logoutUser } from "@/lib/api";
 import { getWalletState } from "@/lib/wallet";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -18,17 +18,30 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
-    const role = typeof window !== "undefined" ? window.localStorage.getItem("joelink-account-role") : null;
-    if (role !== "admin") {
-      router.replace("/login");
-      return;
-    }
+    const validateAdmin = async () => {
+      try {
+        const me = await getCurrentUser();
+        const role = me?.user?.role;
+        if (role !== "admin") {
+          router.replace("/login");
+          return;
+        }
+      } catch {
+        const role = typeof window !== "undefined" ? window.localStorage.getItem("joelink-account-role") : null;
+        if (role !== "admin") {
+          router.replace("/login");
+          return;
+        }
+      }
 
-    setIsAdmin(true);
-    const wallet = getWalletState();
-    setBalance(wallet.balance);
+      setIsAdmin(true);
+      const wallet = getWalletState();
+      setBalance(wallet.balance);
 
-    void fetchNotifications();
+      void fetchNotifications();
+    };
+
+    void validateAdmin();
   }, [router]);
 
   async function fetchNotifications() {
@@ -44,7 +57,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const bottomNav = [
     { href: "/admin", label: "Home", icon: <House size={20} weight="bold" /> },
-    { href: "/admin/add-product", label: "Add", icon: <PlusCircle size={20} weight="bold" /> },
+    { href: "/admin/add-product", label: "Products", icon: <ShoppingBagOpen size={20} weight="bold" /> },
     { href: "/admin/transactions", label: "Txn", icon: <Receipt size={22} weight="bold" /> },
     { href: "/admin/orders", label: "Orders", icon: <ShoppingCart size={20} weight="bold" /> },
     { href: "/admin/deposits", label: "Deposits", icon: <Bank size={20} weight="bold" /> },
@@ -62,10 +75,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => {
-                setNotifOpen((prev) => !prev);
-                if (!notifOpen) {
-                  void fetchNotifications();
-                }
+                setNotifOpen(false);
+                router.push("/admin/notifications");
+                void fetchNotifications();
               }}
               className="relative grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 shadow-sm transition hover:bg-slate-100"
               aria-label="Admin notifications"
@@ -91,9 +103,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
+                      try {
+                        await logoutUser();
+                      } catch {
+                        // ignore and proceed with local cleanup
+                      }
                       window.localStorage.removeItem("joelink-account-role");
                       window.localStorage.removeItem("joelink-account-created");
+                      window.localStorage.removeItem("joelink-account-user-id");
+                      window.localStorage.removeItem("joelink-account-name");
+                      window.localStorage.removeItem("joelink-account-email");
+                      window.localStorage.removeItem("joelink-account-password");
                       router.push("/");
                     }}
                     className="w-full text-left rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"

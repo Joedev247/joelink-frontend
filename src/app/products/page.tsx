@@ -118,8 +118,8 @@ export default function ProductsPage() {
                   <div className="mt-4 flex items-end justify-between border-t border-slate-100 px-1 pt-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="account-price numeric-display text-lg font-black">{money(p.price, getStoredCurrency())}</span>
-                        <span className="numeric-display text-[10px] text-slate-400 line-through">{money(p.originalPrice ?? p.price * 1.35, getStoredCurrency())}</span>
+                        <span className="account-price text-lg font-black numeric-display">{money(p.price, getStoredCurrency())}</span>
+                        <span className="text-[10px] text-slate-400 line-through numeric-display">{money(p.originalPrice ?? p.price * 1.35, getStoredCurrency())}</span>
                       </div>
                       <span className="account-savings text-[10px] font-bold">Save {Math.round((1 - p.price / (p.originalPrice ?? p.price * 1.35)) * 100)}% today</span>
                     </div>

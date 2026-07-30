@@ -1,7 +1,7 @@
 import { formatCurrencyWithSymbol, getStoredCurrency, type CurrencyCode } from "./currency";
 
 export type Product = { id: number; name: string; category: string; description: string; price: number; originalPrice?: number; stock?: number; icon?: string; color?: string; features?: string[]; credentials?: { username?: string; password?: string; email?: string; recoveryEmail?: string; notes?: string } };
-export type Order = { id: string; product: string; date: string; amount: number; status: string };
+export type Order = { id: string; product: string; productId?: string | number; date: string; time?: string; amount: number; status: string };
 export type WishlistItem = { id: number; name: string; price: number; category: string; tag: string };
 
 export const categories = ["All accounts", "Social media", "Streaming", "Productivity", "Gaming"];
@@ -16,9 +16,9 @@ export const products: Product[] = [
 ];
 
 const seedOrders: Order[] = [
-  { id: "JL-10482", product: "Instagram Premium", date: "Jul 18, 2026", amount: 18, status: "Completed" },
-  { id: "JL-10471", product: "Canva Pro", date: "Jul 13, 2026", amount: 12, status: "Completed" },
-  { id: "JL-10454", product: "Netflix Premium", date: "Jul 04, 2026", amount: 9, status: "Completed" },
+  { id: "JL-10482", product: "Instagram Premium", date: "Jul 18, 2026", time: "10:12 AM", amount: 18, status: "Completed" },
+  { id: "JL-10471", product: "Canva Pro", date: "Jul 13, 2026", time: "02:25 PM", amount: 12, status: "Completed" },
+  { id: "JL-10454", product: "Netflix Premium", date: "Jul 04, 2026", time: "11:05 AM", amount: 9, status: "Completed" },
 ];
 
 export const ORDERS_STORAGE_KEY = "joelink-orders";
@@ -55,7 +55,9 @@ export function createOrderFromProduct(product: Product) {
   const order: Order = {
     id: `JL-${Date.now().toString().slice(-5)}`,
     product: product.name,
+    productId: product.id,
     date: new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
+    time: new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
     amount: product.price,
     status: "Completed",
   };

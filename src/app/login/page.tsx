@@ -4,23 +4,40 @@ import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/shell";
+import { loginUser } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin(event: FormEvent<HTMLFormElement>) {
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // Simple dev-side admin detection: exact match sends to admin
-    const isAdmin = email === "admin@joelink.test" && password === "admin";
-    window.localStorage.setItem("joelink-account-created", "true");
-    window.localStorage.setItem("joelink-account-role", isAdmin ? "admin" : "customer");
-    window.dispatchEvent(new Event("joelink-account-updated"));
-    if (isAdmin) {
-      router.push("/admin");
-    } else {
-      router.push("/");
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await loginUser({ email, password });
+      const user = response?.user;
+      window.localStorage.setItem("joelink-account-created", "true");
+      window.localStorage.setItem("joelink-account-role", user?.role || "customer");
+      window.localStorage.setItem("joelink-account-user-id", user?.id || "");
+      window.localStorage.setItem("joelink-account-name", user?.name || "");
+      window.localStorage.setItem("joelink-account-email", user?.email || email);
+      window.localStorage.setItem("joelink-account-password", password);
+      window.dispatchEvent(new Event("joelink-account-updated"));
+
+      if (user?.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
+    } catch {
+      setError("Invalid email or password.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -57,8 +74,9 @@ export default function LoginPage() {
                     placeholder="••••••••"
                   />
                 </label>
-                <button className="w-full rounded-xl bg-[#a3f45f]  px-5 py-3.5 text-sm font-black text-black transition ">
-                  Sign in
+                {error ? <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
+                <button disabled={loading} className="w-full rounded-xl bg-[#a3f45f] px-5 py-3.5 text-sm font-black text-black transition disabled:cursor-not-allowed disabled:opacity-70">
+                  {loading ? "Signing in..." : "Sign in"}
                 </button>
                 <div className="flex items-center gap-3 text-[11px] text-slate-400">
                   <span className="h-px flex-1 bg-slate-200" />

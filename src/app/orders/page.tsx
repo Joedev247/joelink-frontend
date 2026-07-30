@@ -4,33 +4,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
-import { getOrders, money, type Order } from "@/lib/store";
+import { money, getOrders as getLocalOrders, products as fallbackProducts, type Order } from "@/lib/store";
 import { getStoredCurrency } from "@/lib/currency";
+import { getRemoteOrders } from "@/lib/api";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
     const syncOrders = async () => {
-      const localOrders = getOrders();
-      setOrders(localOrders);
-
       try {
-        const response = await fetch("http://localhost:4000/api/orders");
-        if (response.ok) {
-          const remoteOrders = await response.json();
-          if (Array.isArray(remoteOrders)) {
-            setOrders(remoteOrders.map((order: any) => ({
-              id: order.id,
-              product: order.productId || "JoeLink product",
-              date: new Date(order.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
-              amount: Number(order.amount || 0),
-              status: order.status === "completed" ? "Completed" : order.status,
-            })));
-          }
-        }
+        const remoteOrders = await getRemoteOrders();
+        setOrders(remoteOrders);
       } catch {
-        // fall back to local order history
+        setOrders(getLocalOrders());
       }
     };
 
@@ -69,7 +56,7 @@ export default function OrdersPage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex flex-col gap-1 flex-1">
-                    <p className="text-sm font-bold text-slate-950">{order.product}</p>
+                    <p className="text-sm font-bold text-slate-950">{fallbackProducts.find((product) => String(product.id) === String(order.productId))?.name ?? order.product}</p>
                   </div>
                   <span
                     className={`rounded-full px-2.5 py-1 font-semibold text-xs whitespace-nowrap ${
@@ -86,11 +73,11 @@ export default function OrdersPage() {
 
                 <div className="flex items-start justify-between gap-4">
                   <p className="text-xs text-slate-500">ID: {order.id}</p>
-                  <p className="text-xs text-slate-500 whitespace-nowrap">{order.date}</p>
+                  <p className="text-xs text-slate-500 whitespace-nowrap">{order.time ? `${order.date} · ${order.time}` : order.date}</p>
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
-                  <p className="numeric-display text-base font-black text-slate-950">{money(order.amount, getStoredCurrency())}</p>
+                  <p className="text-base font-black text-slate-950 numeric-display">{money(order.amount, getStoredCurrency())}</p>
                   <Link
                     href={`/orders/${encodeURIComponent(order.id)}`}
                     className="inline-flex items-center gap-2 rounded-lg bg-[#a3f45f] px-3 py-2 text-xs font-bold text-[#09120b] shadow-xs transition hover:bg-[#94d34c] whitespace-nowrap"

@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { formatCurrency, getUnreadNotificationCount, getWalletState, type WalletTransaction } from "@/lib/wallet";
 import { getStoredCurrency } from "@/lib/currency";
+import { getCurrentUser, getNotifications, logoutUser } from "@/lib/api";
 
 const nav = [
   {
@@ -53,31 +54,80 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [hasAccount, setHasAccount] = useState(false);
   const [balance, setBalance] = useState(0);
   const [notifications, setNotifications] = useState<WalletTransaction[]>([]);
+  const [remoteNotifications, setRemoteNotifications] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const hideShellExtras = pathname === "/login" || pathname === "/register";
 
-  const unreadCount = useMemo(() => getUnreadNotificationCount(notifications), [notifications]);
+  const unreadCount = useMemo(() => {
+    const walletUnread = getUnreadNotificationCount(notifications);
+    const lastSeenRemoteId = typeof window !== "undefined"
+      ? window.localStorage.getItem("joelink-remote-notifications-last-seen")
+      : null;
+
+    if (!remoteNotifications.length) {
+      return walletUnread;
+    }
+
+    if (!lastSeenRemoteId) {
+      return walletUnread + remoteNotifications.length;
+    }
+
+    const unseenRemote = remoteNotifications.filter((item) => item.id !== lastSeenRemoteId).length;
+    return walletUnread + unseenRemote;
+  }, [notifications, remoteNotifications]);
 
   useEffect(() => {
-    const syncState = () => {
+    const syncState = async () => {
+      try {
+        const me = await getCurrentUser();
+        const user = me?.user;
+        const accountCreated = Boolean(user || window.localStorage.getItem("joelink-account-created") === "true");
+        setHasAccount(accountCreated);
+        if (accountCreated && user) {
+          const wallet = getWalletState();
+          setBalance(wallet.balance);
+          setNotifications(wallet.transactions);
+          try {
+            const items = await getNotifications(user.id);
+            setRemoteNotifications(items || []);
+          } catch {
+            setRemoteNotifications([]);
+          }
+          return;
+        }
+      } catch {
+        // fall back to local storage state below
+      }
+
       const accountCreated = window.localStorage.getItem("joelink-account-created") === "true";
       setHasAccount(accountCreated);
       if (accountCreated) {
         const wallet = getWalletState();
         setBalance(wallet.balance);
         setNotifications(wallet.transactions);
+
+        const currentUserId = window.localStorage.getItem("joelink-account-user-id") || "user_2";
+        try {
+          const items = await getNotifications(currentUserId);
+          setRemoteNotifications(items || []);
+        } catch {
+          setRemoteNotifications([]);
+        }
       } else {
         setBalance(0);
         setNotifications([]);
+        setRemoteNotifications([]);
       }
     };
 
-    syncState();
+    void syncState();
     window.addEventListener("joelink-account-updated", syncState);
+    window.addEventListener("joelink-notifications-updated", syncState);
     window.addEventListener("storage", syncState);
     return () => {
       window.removeEventListener("joelink-account-updated", syncState);
+      window.removeEventListener("joelink-notifications-updated", syncState);
       window.removeEventListener("storage", syncState);
     };
   }, []);
@@ -131,7 +181,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:flex"
                   >
                     <WalletIcon size={16} weight="bold" className="text-[#0f766e]" />
-                    <span className="numeric-display">{formatCurrency(balance, getStoredCurrency())}</span>
+                    <span>{formatCurrency(balance, getStoredCurrency())}</span>
                   </Link>
 
                   <div className="relative">
@@ -172,8 +222,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
                           <ShoppingBagOpen size={16} weight="fill" className="text-[#0f766e]" />
                           My wishlist
                         </Link>
-                        <button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => {
+                        <button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={async () => {
+                          try {
+                            await logoutUser();
+                          } catch {
+                            // ignore and proceed with local cleanup
+                          }
                           window.localStorage.removeItem("joelink-account-created");
+                          window.localStorage.removeItem("joelink-account-role");
+                          window.localStorage.removeItem("joelink-account-user-id");
+                          window.localStorage.removeItem("joelink-account-name");
+                          window.localStorage.removeItem("joelink-account-email");
+                          window.localStorage.removeItem("joelink-account-password");
                           window.dispatchEvent(new Event("joelink-account-updated"));
                           setMenuOpen(false);
                         }}>
@@ -259,7 +319,7 @@ export function PageTitle({
         {title}
       </h1>
       {description && (
-        <p className="mt-3 max-w-2xl text-slate-500 text-sm">{description}</p>
+        <p className="mt-2 max-w-2xl text-slate-500 text-sm">{description}</p>
       )}
     </div>
   );

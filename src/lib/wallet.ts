@@ -4,46 +4,18 @@ export type WalletTransaction = {
   id: string;
   type: string;
   method: string;
-  amount: string;
+  amount: string | number;
   amountValue?: number;
   status: string;
   date: string;
+  time?: string;
+  createdAt?: string;
   kind: "deposit" | "purchase";
 };
 
 export const WALLET_BALANCE_KEY = "joelink-wallet-balance";
 export const WALLET_TRANSACTIONS_KEY = "joelink-wallet-transactions";
 export const NOTIFICATIONS_LAST_SEEN_KEY = "joelink-notifications-last-seen";
-
-export const defaultWalletTransactions: WalletTransaction[] = [
-  {
-    id: "txn-1",
-    type: "Deposit",
-    method: "Add fund",
-    amount: "+$120.00",
-    status: "Completed",
-    date: "Jul 22",
-    kind: "deposit",
-  },
-  {
-    id: "txn-2",
-    type: "Deposit",
-    method: "Add fund",
-    amount: "+$45.00",
-    status: "Completed",
-    date: "Jul 20",
-    kind: "deposit",
-  },
-  {
-    id: "txn-3",
-    type: "Purchase",
-    method: "Order",
-    amount: "-$32.50",
-    status: "Pending",
-    date: "Jul 21",
-    kind: "purchase",
-  },
-];
 
 export function formatCurrency(value: number, currency?: CurrencyCode) {
   const selectedCurrency = currency ?? getStoredCurrency();
@@ -52,7 +24,7 @@ export function formatCurrency(value: number, currency?: CurrencyCode) {
 
 export function getWalletState() {
   if (typeof window === "undefined") {
-    return { balance: 0, transactions: defaultWalletTransactions };
+    return { balance: 0, transactions: [] as WalletTransaction[] };
   }
 
   const storedBalance = window.localStorage.getItem(WALLET_BALANCE_KEY);
@@ -60,7 +32,7 @@ export function getWalletState() {
   const balance = Number.isFinite(parsedBalance) ? parsedBalance : 0;
 
   const storedTransactions = window.localStorage.getItem(WALLET_TRANSACTIONS_KEY);
-  let transactions = defaultWalletTransactions;
+  let transactions: WalletTransaction[] = [];
 
   if (storedTransactions) {
     try {
@@ -69,7 +41,7 @@ export function getWalletState() {
         transactions = parsed as WalletTransaction[];
       }
     } catch {
-      transactions = defaultWalletTransactions;
+      transactions = [];
     }
   }
 
@@ -142,6 +114,8 @@ export function addWalletDeposit(amount: number, method: string = "Add fund") {
     amountValue: amount,
     status: "Completed",
     date: new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    time: new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+    createdAt: new Date().toISOString(),
     kind: "deposit",
   };
   const nextTransactions = [nextTransaction, ...transactions].slice(0, 6);
@@ -161,6 +135,8 @@ export function applyPurchaseToWallet(amount: number, productName: string) {
     amountValue: amount,
     status: "Completed",
     date: new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    time: new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+    createdAt: new Date().toISOString(),
     kind: "purchase",
   };
   const nextTransactions = [nextTransaction, ...transactions].slice(0, 6);

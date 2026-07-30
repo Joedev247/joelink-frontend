@@ -1,18 +1,40 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/shell";
+import { registerUser } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function createAccount(event: FormEvent<HTMLFormElement>) {
+  async function createAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    window.localStorage.setItem("joelink-account-created", "true");
-    window.dispatchEvent(new Event("joelink-account-updated"));
-    router.push("/");
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await registerUser({ name, email, password });
+      const user = response?.user;
+      window.localStorage.setItem("joelink-account-created", "true");
+      window.localStorage.setItem("joelink-account-role", user?.role || "customer");
+      window.localStorage.setItem("joelink-account-user-id", user?.id || "");
+      window.localStorage.setItem("joelink-account-name", user?.name || name);
+      window.localStorage.setItem("joelink-account-email", user?.email || email);
+      window.localStorage.setItem("joelink-account-password", password);
+      window.dispatchEvent(new Event("joelink-account-updated"));
+      router.push("/");
+    } catch (err: any) {
+      setError(err?.message || "Unable to create your account right now.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -30,6 +52,8 @@ export default function RegisterPage() {
                   Full name
                   <input
                     required
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
                     className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                     placeholder="Your name"
                   />
@@ -39,6 +63,8 @@ export default function RegisterPage() {
                   <input
                     type="email"
                     required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
                     className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                     placeholder="email@example.com"
                   />
@@ -49,12 +75,15 @@ export default function RegisterPage() {
                     type="password"
                     required
                     minLength={8}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
                     className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                     placeholder="Enter password"
                   />
                 </label>
-                <button className="w-full rounded-xl bg-[#a3f45f]  px-5 py-3.5 text-sm font-black text-black transition ">
-                  Sign up
+                {error ? <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
+                <button disabled={loading} className="w-full rounded-xl bg-[#a3f45f] px-5 py-3.5 text-sm font-black text-black transition disabled:cursor-not-allowed disabled:opacity-70">
+                  {loading ? "Creating account..." : "Sign up"}
                 </button>
                 <div className="flex items-center gap-3 text-[11px] text-slate-400">
                   <span className="h-px flex-1 bg-slate-200" />

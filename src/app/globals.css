@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-raleway);
   --font-mono: var(--font-raleway);
+  --font-digits: var(--font-digits);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,7 +27,8 @@ body {
 }
 
 .numeric-display {
-  font-family: "Segoe UI", "Inter", "Arial", sans-serif;
+  font-family: var(--font-digits), var(--font-raleway), Arial, Helvetica, sans-serif;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 

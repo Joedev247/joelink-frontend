@@ -4,19 +4,28 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
-import { getOrders, products, type Order } from "@/lib/store";
+import { getOrders as getLocalOrders, products as fallbackProducts, type Order, type Product } from "@/lib/store";
+import { getRemoteOrders, getProducts as getRemoteProducts } from "@/lib/api";
 import { OrderDetailsContent } from "./order-details-content";
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>(fallbackProducts);
 
   useEffect(() => {
-    const syncOrders = () => {
-      setOrders(getOrders());
+    const syncOrders = async () => {
+      try {
+        const [remoteOrders, remoteProducts] = await Promise.all([getRemoteOrders(), getRemoteProducts()]);
+        setOrders(remoteOrders);
+        setProducts(remoteProducts);
+      } catch {
+        setOrders(getLocalOrders());
+        setProducts(fallbackProducts);
+      }
     };
 
-    syncOrders();
+    void syncOrders();
     window.addEventListener("storage", syncOrders);
     window.addEventListener("joelink-account-updated", syncOrders);
 
@@ -26,8 +35,19 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     };
   }, []);
 
-  const order = orders.find((entry) => entry.id === id);
-  const product = products.find((entry) => entry.name === order?.product);
+  const order = orders.find((entry) => entry.id === id || String(entry.id) === id);
+  const product = products.find((entry) => {
+    const requestedProductId = typeof order?.productId === "number"
+      ? order.productId
+      : typeof order?.productId === "string"
+        ? Number(order.productId)
+        : NaN;
+
+    return (
+      (Number.isFinite(requestedProductId) && entry.id === requestedProductId) ||
+      entry.name === order?.product
+    );
+  });
 
   if (!order) {
     return (
@@ -55,7 +75,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         </Link>
 
         <PageTitle
-          title={order.product}
+          title={product?.name ?? order.product}
           description="Review your purchase summary and secure access details."
         />
 
