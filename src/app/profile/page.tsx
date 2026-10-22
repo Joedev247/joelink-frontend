@@ -1,21 +1,36 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Copy, Gift, ShieldCheck, Sparkle, UserCircle, HeartBreak } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, Copy, Gift, ShieldCheck, UserCircle, HeartBreak } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
 import { getWishlistItems, money, type WishlistItem } from "@/lib/store";
-import { getCurrentUser, getOrders, getWalletTransactions, updateUser } from "@/lib/api";
-import { SUPPORTED_CURRENCIES, type CurrencyCode } from "@/lib/currency";
+import { getCurrentUser, updateUser } from "@/lib/api";
+
+function formatMemberSince(value: unknown) {
+  if (typeof value !== "string" || !value) {
+    return "Unavailable";
+  }
+
+  const createdAt = new Date(value);
+  if (!Number.isFinite(createdAt.getTime())) {
+    return "Unavailable";
+  }
+
+  return createdAt.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 
 export default function ProfilePage() {
-  const [fullName, setFullName] = useState("Joedev");
-  const [email, setEmail] = useState("joedev@gmail.com");
-  const [currency, setCurrency] = useState<CurrencyCode>("CFA");
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [orderCount, setOrderCount] = useState(0);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [memberSince, setMemberSince] = useState(" ");
+  const [memberSince, setMemberSince] = useState("Unavailable");
   const [statusMessage, setStatusMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -36,27 +51,12 @@ export default function ProfilePage() {
         const currentUser = response?.user;
 
         if (currentUser) {
-          const storedCurrency = (window.localStorage.getItem("joelink-profile-currency") as CurrencyCode | null) || "CFA";
-          const nextCurrency = SUPPORTED_CURRENCIES.includes(storedCurrency) ? storedCurrency : "CFA";
-
-          setUserId(String(currentUser.id || ""));
+          const currentUserId = String(currentUser.id || "");
+          setUserId(currentUserId);
           setFullName(String(currentUser.name || ""));
           setEmail(String(currentUser.email || ""));
-          setCurrency(nextCurrency);
-          setWalletBalance(Number(currentUser.walletBalance ?? 0));
-          setMemberSince(
-            currentUser.createdAt
-              ? new Date(currentUser.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
-              : ""
-          );
-
-          const walletTransactions = await getWalletTransactions(String(currentUser.id));
-          const nextBalance = walletTransactions.reduce((sum, tx) => sum + Number(tx.amountValue ?? tx.amount ?? 0), 0);
-          setWalletBalance(nextBalance);
-
-          const orders = await getOrders();
-          const userOrders = orders.filter((order) => String(order.userId ?? order.user_id ?? "") === String(currentUser.id));
-          setOrderCount(userOrders.length);
+          setMemberSince(formatMemberSince(currentUser.createdAt ?? currentUser.created_at));
+          setAvatarUrl(window.localStorage.getItem(`joelink-profile-avatar-${currentUserId}`) || "");
           setWishlistItems(getWishlistItems());
           return;
         }
@@ -67,10 +67,8 @@ export default function ProfilePage() {
       setUserId(null);
       setFullName("");
       setEmail("");
-      setCurrency("CFA");
-      setWalletBalance(0);
-      setOrderCount(0);
-      setMemberSince("");
+      setAvatarUrl("");
+      setMemberSince("Unavailable");
       setWishlistItems(getWishlistItems());
     };
 
@@ -91,7 +89,6 @@ export default function ProfilePage() {
 
     const nextName = fullName.trim() || "";
     const nextEmail = email.trim() || "";
-    const nextCurrency = currency || "CFA";
 
     if (userId) {
       try {
@@ -107,8 +104,8 @@ export default function ProfilePage() {
 
     window.localStorage.setItem("joelink-profile-name", nextName);
     window.localStorage.setItem("joelink-profile-email", nextEmail);
-    window.localStorage.setItem("joelink-profile-currency", nextCurrency);
-    window.localStorage.setItem("joelink-profile-member-since", memberSince || "");
+    window.localStorage.setItem("joelink-account-name", nextName);
+    window.localStorage.setItem("joelink-account-email", nextEmail);
     window.dispatchEvent(new Event("joelink-account-updated"));
     setStatusMessage("Profile updated successfully.");
   };
@@ -128,32 +125,28 @@ export default function ProfilePage() {
               <div className="bg-[#a3f45f] p-6 text-white sm:p-8">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="grid h-16 w-16 place-items-center rounded-full bg-white/15 text-2xl font-black backdrop-blur text-black">
-                      {profileInitials}
+                    <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full bg-white/70 text-2xl font-black text-black">
+                      {avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt={`${fullName || "User"} profile photo`}
+                          width={64}
+                          height={64}
+                          unoptimized
+                          className="h-full w-full object-cover"
+                        />
+                      ) : profileInitials}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-black/80">User profile</p>
-                      <h2 className="mt-1 text-2xl font-black text-black">{fullName || "Your profile"}</h2>
+                      <h2 className="mt-1 text-xl font-black text-black">{fullName || "Your profile"}</h2>
                       <p className="mt-1 text-sm text-black/80">{email || "Sign in to see your account details."}</p>
                       <p className="mt-1 text-sm font-semibold text-black/70">@{profileHandle}</p>
                     </div>
                   </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 text-black px-3 py-2 text-sm font-semibold">
-                    <Sparkle size={16} weight="fill" />
-                    Premium member
-                  </div>
                 </div>
               </div>
 
-              <div className="grid gap-4 p-5 sm:grid-cols-3 sm:p-6">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Wallet balance</p>
-                  <p className="mt-2 text-xl font-black text-slate-950 numeric-display">{money(walletBalance, currency)}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Orders</p>
-                  <p className="mt-2 text-xl font-black text-slate-950">{orderCount} active</p>
-                </div>
+              <div className="p-5 sm:p-6">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Member since</p>
                   <p className="mt-2 text-xl font-black text-slate-950">{memberSince}</p>
@@ -178,27 +171,19 @@ export default function ProfilePage() {
                   <input
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
+                    autoComplete="name"
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
                   />
                 </label>
                 <label className="block text-sm font-semibold text-slate-700">
-                  Preferred currency
-                  <select
-                    value={currency}
-                    onChange={(event) => {
-                      const nextCurrency = event.target.value as CurrencyCode;
-                      setCurrency(nextCurrency);
-                      window.localStorage.setItem("joelink-profile-currency", nextCurrency);
-                      window.dispatchEvent(new Event("joelink-account-updated"));
-                    }}
+                  Email address
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
-                  >
-                    {SUPPORTED_CURRENCIES.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </label>
               </div>
 
