@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bell, ArrowRight, Sparkle } from "@phosphor-icons/react/dist/ssr";
 import { Shell, PageTitle } from "@/components/shell";
 import { getCurrentUser, getNotifications, getWalletTransactions } from "@/lib/api";
-import { markNotificationsAsRead, type WalletTransaction } from "@/lib/wallet";
+import { getWalletState, markNotificationsAsRead, type WalletTransaction } from "@/lib/wallet";
 import { convertAmount, getStoredCurrency } from "@/lib/currency";
 
 type RemoteNotification = {
@@ -48,34 +48,65 @@ function buildNotification(item: WalletTransaction) {
   };
 }
 
+function mergeWalletTransactions(remote: WalletTransaction[], local: WalletTransaction[]) {
+  const combined = [...local, ...remote];
+  const unique = combined.filter((transaction, index) => {
+    const amount = Number(transaction.amountValue ?? transaction.amount);
+    const createdAt = transaction.createdAt ? new Date(transaction.createdAt).getTime() : NaN;
+    return !combined.slice(0, index).some((existing) => {
+      const existingAmount = Number(existing.amountValue ?? existing.amount);
+      const existingCreatedAt = existing.createdAt ? new Date(existing.createdAt).getTime() : NaN;
+      return transaction.kind === existing.kind
+        && transaction.method === existing.method
+        && Number.isFinite(amount)
+        && amount === existingAmount
+        && Number.isFinite(createdAt)
+        && Number.isFinite(existingCreatedAt)
+        && Math.abs(createdAt - existingCreatedAt) < 10_000;
+    });
+  });
+
+  return unique.sort((left, right) =>
+    new Date(right.createdAt ?? 0).getTime() - new Date(left.createdAt ?? 0).getTime(),
+  );
+}
+
 export default function NotificationsPage() {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [messages, setMessages] = useState<RemoteNotification[]>([]);
 
   useEffect(() => {
     const syncNotifications = async () => {
+      const localTransactions = getWalletState().transactions;
+      setTransactions(localTransactions);
+
+      let currentUserId: string | null = null;
       try {
         const response = await getCurrentUser();
-        const currentUser = response?.user;
-        if (!currentUser?.id) {
-          setTransactions([]);
-          setMessages([]);
-          return;
-        }
-
-        const walletItems = await getWalletTransactions(String(currentUser.id));
-        setTransactions(walletItems);
-
-        try {
-          const items = await getNotifications(String(currentUser.id));
-          setMessages((items as RemoteNotification[]) || []);
-        } catch {
-          setMessages([]);
-        }
+        currentUserId = response?.user?.id ? String(response.user.id) : null;
       } catch {
-        setTransactions([]);
-        setMessages([]);
+        // Use the locally stored account ID when the session lookup is unavailable.
       }
+
+      currentUserId = currentUserId
+        || window.localStorage.getItem("joelink-account-user-id")
+        || (window.localStorage.getItem("joelink-account-created") === "true" ? "user_2" : null);
+
+      if (!currentUserId) {
+        setMessages([]);
+        return;
+      }
+
+      const [walletResult, notificationResult] = await Promise.allSettled([
+        getWalletTransactions(currentUserId),
+        getNotifications(currentUserId),
+      ]);
+
+      const remoteTransactions = walletResult.status === "fulfilled" ? walletResult.value : [];
+      setTransactions(mergeWalletTransactions(remoteTransactions, localTransactions));
+      setMessages(notificationResult.status === "fulfilled"
+        ? (notificationResult.value as RemoteNotification[]) || []
+        : []);
     };
 
     void syncNotifications();
