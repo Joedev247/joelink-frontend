@@ -34,6 +34,13 @@ body {
 
 * { box-sizing: border-box; }
 a { text-decoration: none; }
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
 .grid-glow { background-image: linear-gradient(rgba(26,115,232,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(26,115,232,.06) 1px, transparent 1px); background-size: 36px 36px; }
 .hero-grid { background: radial-gradient(circle at 50% -20%, rgba(54, 105, 179, .32), transparent 42%), radial-gradient(circle at 8% 72%, rgba(17, 112, 111, .14), transparent 28%), radial-gradient(circle at 92% 55%, rgba(68, 55, 152, .15), transparent 30%), #030815; }
 .hero-orb { position: absolute; border-radius: 9999px; filter: blur(70px); pointer-events: none; }
